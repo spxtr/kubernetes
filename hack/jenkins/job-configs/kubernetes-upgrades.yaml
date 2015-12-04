@@ -64,9 +64,10 @@
             projects:
                 - name: 'kubernetes-upgrade-gke-{version-old}-{version-new}-step6-e2e-new'
 
-# actual job
+# actual job except step1-deploy
 - job-template:
     name: 'kubernetes-upgrade-gke-{version-old}-{version-new}-{step}'
+    workspace: /var/lib/jenkins/jobs/kubernetes-upgrade-gke-{version-old}-{version-new}-step1-deploy/workspace/
     builders:
         - shell: |
             export E2E_PUBLISH_GREEN_VERSION=true
@@ -91,7 +92,7 @@
         - default-log-parser
         - default-junit-publisher
 
-# actual job
+# actual job for step1-deploy
 - job-template:
     name: 'kubernetes-upgrade-gke-{version-old}-{version-new}-step1-deploy'
     builders:
