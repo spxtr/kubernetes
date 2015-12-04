@@ -67,6 +67,7 @@
 # actual job except step1-deploy
 - job-template:
     name: 'kubernetes-upgrade-gke-{version-old}-{version-new}-{step}'
+    # Use the same workspace as step1
     workspace: /var/lib/jenkins/jobs/kubernetes-upgrade-gke-{version-old}-{version-new}-step1-deploy/workspace/
     builders:
         - shell: |
@@ -84,7 +85,7 @@
             abort: true
             fail: true
         - timestamps
-        - workspace-cleanup
+        # Don't clean the workspace
     publishers:
         - claim-build
         - email-ext
