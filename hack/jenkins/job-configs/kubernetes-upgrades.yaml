@@ -18,12 +18,18 @@
                     share-publicly: true
                     upload-for-failed-jobs: true
 
+# multijob
 - job-template:
     name: 'kubernetes-upgrade-{version-old}-{version-new}'
+    # TODO(spxtr)
+    disabled: true
+    description: "Upgrade multijob from {version-old} to {version-new}. WIP, contact ihmccreery@."
     project-type: multijob
     triggers:
         - timed: '@hourly'
     builders:
+        # TODO(spxtr) take care of this once we merge these in.
+        # - shell: "curl -fsS https://raw.githubusercontent.com/kubernetes/kubernetes/master/hack/jenkins/update-jobs.sh | /bin/bash -s - hack/jenkins/job-configs/upgrades/kubernetes-upgrade-gke-1.0-master"
         - multijob:
             name: Deploy
             projects:
@@ -49,15 +55,19 @@
             projects:
                 - name: 'kubernetes-upgrade-{version-old}-{version-new}-step6-e2e-new'
 
+# actual job
 - job-template:
-    name: 'kubernetes-upgrade-{version-old}-{version-new}-{extension}'
+    name: 'kubernetes-upgrade-{version-old}-{version-new}-{step}'
+    # TODO(spxtr)
+    disabled: true
     logrotate:
         daysToKeep: 7
 
     builders:
         - shell: |
             export E2E_PUBLISH_GREEN_VERSION=true
-            curl -fsS -o upload-to-gcs.sh --retry 3 "https://raw.githubusercontent.com/kubernetes/kubernetes/{branch-name}/hack/jenkins/upload-to-gcs.sh" && source upload-to-gcs.sh; rm -f upload-to-gcs.sh
+            # TODO(spxtr) add export GCE_SERVICE_ACCOUNT
+            curl -fsS -o upload-to-gcs.sh --retry 3 "https://raw.githubusercontent.com/kubernetes/kubernetes/master/hack/jenkins/upload-to-gcs.sh" && source upload-to-gcs.sh; rm -f upload-to-gcs.sh
             curl -fsS --retry 3  "https://raw.githubusercontent.com/GoogleCloudPlatform/kubernetes/{branch-name}/hack/jenkins/e2e.sh" | bash -
 
     triggers:
@@ -84,26 +94,3 @@
             test-stability: true
             claim-build: true
         - default-log-parser
-
-- project:
-    name: upgrade-from-1.0
-    version-old: 1.0
-    version-new:
-        - 1.1
-        - master
-    extension:
-        - 'step1-deploy':
-            branch-name: '{version-old}'
-        - 'step2-upgrade-master':
-            branch-name: '{version-new}'
-        - 'step3-e2e-old':
-            branch-name: '{version-old}'
-        - 'step4-upgrade-cluster':
-            branch-name: '{version-new}'
-        - 'step5-e2e-old':
-            branch-name: '{version-old}'
-        - 'step6-e2e-new':
-            branch-name: '{version-new}'
-    jobs:
-        - 'kubernetes-upgrade-{version-old}-{version-new}'
-        - 'kubernetes-upgrade-{version-old}-{version-new}-{extension}'
