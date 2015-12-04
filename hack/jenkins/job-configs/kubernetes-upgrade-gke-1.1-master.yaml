@@ -1,0 +1,26 @@
+- project:
+    name: kubernetes-upgrade-gke-1.1-master-multijob
+    version-old: 1.1
+    version-new: master
+    jobs:
+        - 'kubernetes-upgrade-{version-old}-{version-new}'
+
+- project:
+    name: kubernetes-upgrade-gke-1.1-master-jobs
+    version-old: 1.1
+    version-old: master
+    step:
+        - 'step1-deploy':
+            branch-name: 'release-1.1'
+        - 'step2-upgrade-master':
+            branch-name: 'master'
+        - 'step3-e2e-old':
+            branch-name: 'release-1.1'
+        - 'step4-upgrade-cluster':
+            branch-name: 'master'
+        - 'step5-e2e-old':
+            branch-name: 'release-1.1'
+        - 'step6-e2e-new':
+            branch-name: 'master'
+    jobs:
+        - 'kubernetes-upgrade-{version-old}-{version-new}-{step}'
