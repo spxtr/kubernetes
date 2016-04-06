@@ -200,9 +200,9 @@ func generateSelfSignedCert(t *testing.T, host, certPath, keyPath string) {
 }
 
 func TestOIDCDiscoveryTimeout(t *testing.T) {
-	maxRetries = 3
-	retryBackoff = time.Second
-	expectErr := fmt.Errorf("failed to fetch provider config after 3 retries")
+	maxRetries = 1
+	retryBackoff = 100 * time.Millisecond
+	expectErr := fmt.Errorf("failed to fetch provider config after 1 retries")
 
 	_, err := New("https://foo/bar", "client-foo", "", "sub", "")
 	if !reflect.DeepEqual(err, expectErr) {
@@ -211,8 +211,9 @@ func TestOIDCDiscoveryTimeout(t *testing.T) {
 }
 
 func TestOIDCDiscoveryNoKeyEndpoint(t *testing.T) {
+	maxRetries = 0
 	var err error
-	expectErr := fmt.Errorf("failed to fetch provider config after 3 retries")
+	expectErr := fmt.Errorf("failed to fetch provider config after 0 retries")
 
 	cert := path.Join(os.TempDir(), "oidc-cert")
 	key := path.Join(os.TempDir(), "oidc-key")
@@ -244,8 +245,7 @@ func TestOIDCDiscoveryNoKeyEndpoint(t *testing.T) {
 }
 
 func TestOIDCDiscoverySecureConnection(t *testing.T) {
-	maxRetries = 3
-	retryBackoff = time.Second
+	maxRetries = 0
 
 	// Verify that plain HTTP issuer URL is forbidden.
 	op := newOIDCProvider(t)
@@ -304,6 +304,8 @@ func TestOIDCDiscoverySecureConnection(t *testing.T) {
 }
 
 func TestOIDCAuthentication(t *testing.T) {
+	maxRetries = 1
+	retryBackoff = 100 * time.Millisecond
 	var err error
 
 	cert := path.Join(os.TempDir(), "oidc-cert")
@@ -441,4 +443,6 @@ func TestOIDCAuthentication(t *testing.T) {
 		}
 		client.Close()
 	}
+	maxRetries = 5
+	retryBackoff = 3 * time.Second
 }
