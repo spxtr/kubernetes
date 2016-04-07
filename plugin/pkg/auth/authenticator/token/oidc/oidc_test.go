@@ -200,18 +200,14 @@ func generateSelfSignedCert(t *testing.T, host, certPath, keyPath string) {
 }
 
 func TestOIDCDiscoveryTimeout(t *testing.T) {
-	maxRetries = 1
-	retryBackoff = 100 * time.Millisecond
 	expectErr := fmt.Errorf("failed to fetch provider config after 1 retries")
-
-	_, err := New("https://foo/bar", "client-foo", "", "sub", "")
+	_, err := New(OIDCOptions{"https://127.0.0.1:9999/bar", "client-foo", "", "sub", "", 1, 100 * time.Millisecond})
 	if !reflect.DeepEqual(err, expectErr) {
 		t.Errorf("Expecting %v, but got %v", expectErr, err)
 	}
 }
 
 func TestOIDCDiscoveryNoKeyEndpoint(t *testing.T) {
-	maxRetries = 0
 	var err error
 	expectErr := fmt.Errorf("failed to fetch provider config after 0 retries")
 
@@ -238,15 +234,13 @@ func TestOIDCDiscoveryNoKeyEndpoint(t *testing.T) {
 		Issuer: mustParseURL(t, srv.URL), // An invalid ProviderConfig. Keys endpoint is required.
 	}
 
-	_, err = New(srv.URL, "client-foo", cert, "sub", "")
+	_, err = New(OIDCOptions{srv.URL, "client-foo", cert, "sub", "", 0, 0})
 	if !reflect.DeepEqual(err, expectErr) {
 		t.Errorf("Expecting %v, but got %v", expectErr, err)
 	}
 }
 
 func TestOIDCDiscoverySecureConnection(t *testing.T) {
-	maxRetries = 0
-
 	// Verify that plain HTTP issuer URL is forbidden.
 	op := newOIDCProvider(t)
 	srv := httptest.NewServer(op.mux)
@@ -260,7 +254,7 @@ func TestOIDCDiscoverySecureConnection(t *testing.T) {
 
 	expectErr := fmt.Errorf("'oidc-issuer-url' (%q) has invalid scheme (%q), require 'https'", srv.URL, "http")
 
-	_, err := New(srv.URL, "client-foo", "", "sub", "")
+	_, err := New(OIDCOptions{srv.URL, "client-foo", "", "sub", "", 0, 0})
 	if !reflect.DeepEqual(err, expectErr) {
 		t.Errorf("Expecting %v, but got %v", expectErr, err)
 	}
@@ -296,7 +290,7 @@ func TestOIDCDiscoverySecureConnection(t *testing.T) {
 	}
 
 	// Create a client using cert2, should fail.
-	_, err = New(tlsSrv.URL, "client-foo", cert2, "sub", "")
+	_, err = New(OIDCOptions{tlsSrv.URL, "client-foo", cert2, "sub", "", 0, 0})
 	if err == nil {
 		t.Fatalf("Expecting error, but got nothing")
 	}
@@ -304,8 +298,6 @@ func TestOIDCDiscoverySecureConnection(t *testing.T) {
 }
 
 func TestOIDCAuthentication(t *testing.T) {
-	maxRetries = 1
-	retryBackoff = 100 * time.Millisecond
 	var err error
 
 	cert := path.Join(os.TempDir(), "oidc-cert")
@@ -419,7 +411,7 @@ func TestOIDCAuthentication(t *testing.T) {
 	}
 
 	for i, tt := range tests {
-		client, err := New(srv.URL, "client-foo", cert, tt.userClaim, tt.groupsClaim)
+		client, err := New(OIDCOptions{srv.URL, "client-foo", cert, tt.userClaim, tt.groupsClaim, 1, 100 * time.Millisecond})
 		if err != nil {
 			t.Errorf("Unexpected error: %v", err)
 			continue
@@ -443,6 +435,4 @@ func TestOIDCAuthentication(t *testing.T) {
 		}
 		client.Close()
 	}
-	maxRetries = 5
-	retryBackoff = 3 * time.Second
 }
